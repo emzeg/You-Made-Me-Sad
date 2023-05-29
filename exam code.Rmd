@@ -1,0 +1,137 @@
+---
+title: "Cognition in Social Interaction"
+author: "Emma Rose Hahn"
+date: "2023-05-18"
+output: html_document
+---
+
+```{r setup}
+
+#knitr::opts_chunk$set(echo = TRUE)
+#loading in the packages needed 
+pacman::p_load(tidyverse, data.table, lme4, ggplot2, lmerTest)
+
+raw_df <- 
+  list.files(path = "C:/Users/Emmar/Documents/cognition in social interaction", pattern = "*.csv") %>% 
+  map_df(~fread(.))
+raw_df
+```
+
+```{r setup}
+#setting up the df
+
+df <- subset(raw_df,!Trial=='Practice') #removing practice
+df <- subset(df, Valence=='negative')#removing everything that is not negative
+df$Trial <- as.factor(df$Trial) 
+df1 <- subset(df,Trial=='First') #creating separate data frames with only first trial date
+df2 <- subset(df,Trial=='Second') #creating separate date frames with only second trial data
+
+df3 <- subset(df,Condition==1) #subsets for only first condition
+df4 <- subset(df,Condition==2) #subsets for only second condition
+```
+
+
+```{r}
+#getting a general visualisation of the data means
+mean_RT1.1 <- df %>% 
+  filter(Trial == 'First') %>%
+  filter(Condition == 1)%>%
+  summarize(mean_reaction_time = mean(Reaction_time))
+
+sd1.1 <- df %>% #getting the standard deviations
+  filter(Trial == 'First') %>%
+  filter(Condition == 1)%>%
+  summarize(SD = sd(Reaction_time))
+
+
+mean_RT1.2 <- df %>%
+  filter(Trial == 'Second') %>%
+  filter(Condition == 1)%>%
+  summarize(mean_reaction_time = mean(Reaction_time))
+
+sd1.2 <- df %>%
+  filter(Trial == 'Second') %>%
+  filter(Condition == 1)%>%
+  summarize(SD = sd(Reaction_time))
+
+
+mean_RT1.1 #0.7410793		trial 1
+mean_RT1.2 #0.719562		 trial 2
+
+sd1.1 #0.2880589 trial 1
+sd1.2 #0.2695635 trial 2
+
+# for the second condition
+mean_RT2.1 <- df %>%
+  filter(Trial == 'First') %>%
+  filter(Condition == 2)%>%
+  summarize(mean_reaction_time = mean(Reaction_time))
+
+sd2.1 <- df %>%
+  filter(Trial == 'First') %>%
+  filter(Condition == 2)%>%
+  summarize(SD = sd(Reaction_time))
+
+mean_RT2.2 <- df %>%
+  filter(Trial == 'Second') %>%
+  filter(Condition == 2)%>%
+  summarize(mean_reaction_time = mean(Reaction_time))
+
+sd2.2 <- df %>%
+  filter(Trial == 'Second') %>%
+  filter(Condition == 2)%>%
+  summarize(SD = sd(Reaction_time))
+
+mean_RT2.1 #0.7751946	trial 1
+mean_RT2.2 #0.7775139	 trial 2
+
+sd2.1 #0.3318806	 trial 1
+sd2.2 #0.3099234	trial 2
+```
+
+```{r}
+df$Condition <- as.factor(df$Condition)
+ggplot(df, aes(Condition, Reaction_time,fill = Condition)) + facet_wrap(~ Trial) +
+  geom_bar(position = "dodge",
+           stat = "summary",
+           fun = "mean") +
+  stat_summary(fun.data = "mean_se", 
+               geom = "errorbar", 
+               width = 0.2) + theme_bw() +
+  labs(x = "", y = "reaction time (s)\n", title = "\nMean Reaction Time for Trial\n") +
+  scale_fill_manual(values = c("pink", "lightgreen"), labels = c("Condition 1", "Condition 2")) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.title.x = element_text(face = "bold", colour = "darkgreen", size = 12),
+    axis.title.y = element_text(face = "bold", colour = "darkgreen", size = 12),
+    legend.title = element_text(face = "bold", size = 10)
+  ) # Add error bars with standard errors
+```
+
+```{r}
+#running analyses 
+
+
+model_1 <- lmer(Reaction_time ~ Condition + (1|ID), data = df1) #is this right????
+
+summary(model_1) #so between 1st trial conditions there is no difference
+
+model_2 <- lmer(Reaction_time ~ Condition + (1|ID), data = df2)
+
+summary(model_2) #whilst second condition is slower, there is still no significant difference 
+
+
+#checking within conditions if there is a difference
+
+
+
+model_3 <- lmer(Reaction_time ~ Trial + (1|ID), data = df3)
+summary(model_3) # no significant difference as expected
+
+model_4 <- lmer(Reaction_time ~ Trial + (1|ID), data = df4)
+summary(model_4) #longer reaction time
+
+anova(model_1)
+```
+
+
